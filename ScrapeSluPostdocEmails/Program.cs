@@ -41,24 +41,27 @@ namespace SluEmailScraper
         [Command("update-cache", Description = CommandDescriptions.UPDATE_CACHE, ExtendedHelpText = CommandDescriptions.UPDATE_CACHE_EXTENDED)]
         public void ScrapeFromSluWebpageAndSaveToCache()
         {
-            foreach (var department in settings.TargetDepartments)
+            foreach (var campus in settings.TargetCampuses)
             {
-                Console.WriteLine($"Querying SLU for '{department}' employee data...");
-                
-                string query = settings.SluSearchUrl.Replace("DEPARTMENTNAME", Uri.EscapeDataString(department));
-                string webpage = LoadWebpage(query);
-                
-                Console.WriteLine("Data received.");
-                
-                string filename = department + ".html";
-                SaveToCacheAsHtml(filename, webpage);
-                
-                Console.WriteLine($"Data saved to '{Path.Combine(settings.CachedSearchResultsDirectory, filename)}'.");
-                Console.WriteLine("Waiting briefly between queries...");
-                
-                Thread.Sleep(2000);
-            }
+                foreach (var department in campus.Departments)
+                {
+                    Console.WriteLine($"Querying SLU for '{department}' employee data...");
 
+                    string query = settings.SluSearchUrl.Replace("DEPARTMENTNAME", Uri.EscapeDataString(department));
+                    string webpage = LoadWebpage(query);
+
+                    Console.WriteLine("Data received.");
+
+                    string filename = department + ".html";
+                    SaveToCacheAsHtml(filename, webpage);
+
+                    Console.WriteLine($"Data saved to '{Path.Combine(settings.CachedSearchResultsDirectory, filename)}'.");
+                    Console.WriteLine("Waiting briefly between queries...");
+
+                    Thread.Sleep(2000);
+                }
+            }
+            
             Console.WriteLine("Done.");
 
             settings.Save();
@@ -101,26 +104,29 @@ namespace SluEmailScraper
             {
                 ISet<Person> people = new HashSet<Person>();
 
-                foreach (var department in settings.TargetDepartments)
+                foreach (var campus in settings.TargetCampuses)
                 {
-                    FileInfo cachedHtml = new FileInfo(Path.Combine(cache.FullName, department + ".html"));
-
-                    if (cachedHtml.Exists)
+                    foreach (var department in campus.Departments)
                     {
-                        HtmlDocument workingHtml = new HtmlDocument();
-                        workingHtml.Load(cachedHtml.OpenRead());
-                        
-                        HtmlNodeCollection searchResults = workingHtml.DocumentNode.SelectNodes(settings.SearchResultXPath);
+                        FileInfo cachedHtml = new FileInfo(Path.Combine(cache.FullName, department + ".html"));
 
-                        foreach (var searchResult in searchResults)
+                        if (cachedHtml.Exists)
                         {
-                            Person person = ProcessSearchResult(searchResult);
+                            HtmlDocument workingHtml = new HtmlDocument();
+                            workingHtml.Load(cachedHtml.OpenRead());
 
-                            if (settings.TargetJobs.Contains(person.Job))
+                            HtmlNodeCollection searchResults = workingHtml.DocumentNode.SelectNodes(settings.SearchResultXPath);
+
+                            foreach (var searchResult in searchResults)
                             {
-                                people.Add(person);
+                                Person person = ProcessSearchResult(searchResult, campus.Name, department);
+
+                                if (settings.TargetJobs.Contains(person.Job))
+                                {
+                                    people.Add(person);
+                                }
                             }
-                        }                       
+                        }
                     }
                 }
                 
@@ -135,13 +141,13 @@ namespace SluEmailScraper
             }
         }
 
-        private Person ProcessSearchResult(HtmlNode result)
+        private Person ProcessSearchResult(HtmlNode result, string campus, string department)
         {
             string name = result.SelectSingleNode(settings.NameXPath)?.InnerText;
             string email = result.SelectSingleNode(settings.EmailXPath)?.InnerText;
             string job = result.SelectSingleNode(settings.JobXPath)?.InnerText.Replace(settings.JobKeyPhrase, string.Empty).Trim();
-
-            return new Person(name, job, email);
+            
+            return new Person(name, job, email, campus, department);
         }
 
         private void SavePeopleToOutputDirectoryAsCsv(string fileName, ICollection<Person> people)
@@ -152,7 +158,7 @@ namespace SluEmailScraper
 
                 using (StreamWriter writer = new StreamWriter(File.OpenWrite(Path.Combine(output.FullName, fileName + ".csv"))))
                 {
-                    writer.WriteLine(string.Join(", ", nameof(Person.Name), nameof(Person.Job), nameof(Person.Email)));
+                    writer.WriteLine(string.Join(", ", nameof(Person.Name), nameof(Person.Job), nameof(Person.Email), nameof(Person.Campus), nameof(Person.Department)));
 
                     foreach (var person in people)
                     {

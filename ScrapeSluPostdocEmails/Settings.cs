@@ -30,43 +30,72 @@ namespace SluEmailScraper
             EmailXPath = @".//a[starts-with(@href, 'mailto')]";
             JobKeyPhrase = "at the";
             JobXPath = $".//span[contains(text(), '{JobKeyPhrase}')]";
-            TargetDepartments = new string[] 
+            TargetCampuses = new Campus[]
             {
-                "Enheten för hippologutbildning",
-                "Enheten för skoglig fältforskning",
-                "Institutionen för akvatiska resurser (SLU Aqua)",
-                "Institutionen för anatomi, fysiologi och biokemi",
-                "Institutionen för biomedicin och veterinär folkhälsovetenskap",
-                "Institutionen för biosystem och teknologi",
-                "Institutionen för ekologi",
-                "Institutionen för ekonomi",
-                "Institutionen för energi och teknik",
-                "Institutionen för husdjurens miljö och hälsa",
-                "Institutionen för husdjurens utfodring och vård",
-                "Institutionen för husdjursgenetik",
-                "Institutionen för kliniska vetenskaper",
-                "Institutionen för landskapsarkitektur, planering och förvaltning",
-                "Institutionen för mark och miljö",
-                "Institutionen för molekylära vetenskaper",
-                "Institutionen för människa och samhälle",
-                "Norrländsk jordbruksvetenskap",
-                "Institutionen för skogens biomaterial och teknologi (SBT)",
-                "Institutionen för skogens ekologi och skötsel",
-                "Institutionen för skogens produkter",
-                "Institutionen för skoglig genetik och växtfysiologi",
-                "Skoglig mykologi och växtpatologi",
-                "Institutionen för skoglig resurshushållning",
-                "Institutionen för skogsekonomi",
-                "Institutionen för stad och land",
-                "Institutionen för sydsvensk skogsvetenskap",
-                "Institutionen för vatten och miljö",
-                "Institutionen för vilt, fisk och miljö",
-                "Institutionen för växtbiologi",
-                "Institutionen för växtförädling",
-                "Institutionen för växtproduktionsekologi",
-                "Institutionen för växtskyddsbiologi",
-                "Skogsmästarskolan"
+                new Campus() 
+                { 
+                    Name = "Alnarp", 
+                    Departments = new string[]
+                    { 
+                        "Institutionen för biosystem och teknologi",
+                        "Institutionen för landskapsarkitektur planering och förvaltning",
+                        "Institutionen för människa och samhälle",
+                        "Institutionen för sydsvensk skogsvetenskap",
+                        "Institutionen för växtförädling",
+                        "Institutionen för växtskyddsbiologi"
+                    }
+                },
+                new Campus() 
+                { 
+                    Name = "Skinnskatteberg", 
+                    Departments = new string[]
+                    {
+                        "Skogsmästarskolan" 
+                    }
+                },
+                new Campus() 
+                { 
+                    Name = "Ultuna", 
+                    Departments = new string[]
+                    {
+                        "Enheten för hippologutbildning",
+                        "Institutionen för akvatiska resurser (SLU Aqua)",
+                        "Institutionen för anatomi fysiologi och biokemi",
+                        "Institutionen för biomedicin och veterinär folkhälsovetenskap",
+                        "Institutionen för ekologi",
+                        "Institutionen för ekonomi",
+                        "Institutionen för energi och teknik",
+                        "Institutionen för husdjurens miljö och hälsa",
+                        "Institutionen för husdjurens utfodring och vård",
+                        "Institutionen för husdjursgenetik",
+                        "Institutionen för kliniska vetenskaper",
+                        "Institutionen för mark och miljö",
+                        "Institutionen för molekylära vetenskaper",
+                        "Institutionen för skogens produkter",
+                        "Skoglig mykologi och växtpatologi",
+                        "Institutionen för stad och land",
+                        "Institutionen för vatten och miljö",
+                        "Institutionen för växtbiologi",
+                        "Institutionen för växtproduktionsekologi" 
+                    }
+                },
+                new Campus() 
+                { 
+                    Name = "Umeå", 
+                    Departments = new string[]
+                    {
+                        "Enheten för skoglig fältforskning",
+                        "Norrländsk jordbruksvetenskap",
+                        "Institutionen för skogens biomaterial och teknologi (SBT)",
+                        "Institutionen för skogens ekologi och skötsel",
+                        "Institutionen för skoglig genetik och växtfysiologi",
+                        "Institutionen för skoglig resurshushållning",
+                        "Institutionen för skogsekonomi",
+                        "Institutionen för vilt fisk och miljö" 
+                    }
+                }
              };
+
             TargetJobs = new string[] { "Postdoc", "Postdoctor" };
         }
 
@@ -76,7 +105,7 @@ namespace SluEmailScraper
 
         public string SluSearchUrl { get; set; }
 
-        public string[] TargetDepartments { get; set; }
+        public Campus[] TargetCampuses { get; set; }
 
         public string SearchResultXPath { get; set; }
 
@@ -102,7 +131,7 @@ namespace SluEmailScraper
             else
             {
                 return new Settings();
-            }           
+            }
         }
 
         public void Save()

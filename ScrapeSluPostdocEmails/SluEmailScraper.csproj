@@ -7,7 +7,7 @@
     <Nullable>disable</Nullable>
     <Title>SLU Email Scraper</Title>
     <Authors>Scott Kuehl-Shelby</Authors>
-    <SignAssembly>True</SignAssembly>
+    <SignAssembly>False</SignAssembly>
     <AssemblyOriginatorKeyFile>C:\Users\georg\Desktop\ScottKuehShelby.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 

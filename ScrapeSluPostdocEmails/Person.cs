@@ -1,19 +1,26 @@
 ﻿using System;
+using System.Net;
 
 namespace SluEmailScraper
 {
     public sealed class Person : IEquatable<Person>
     {
-        public Person(string name, string job, string email)
+        public Person(string name, string job, string email, string campus, string department)
         {
-            Name=(name ?? string.Empty).Trim();
-            Job=(job ?? string.Empty).Trim();
-            Email=(email ?? string.Empty).Trim();
+            Name = WebUtility.HtmlDecode((name ?? string.Empty).Trim());
+            Job = WebUtility.HtmlDecode((job ?? string.Empty).Trim());
+            Email = (email ?? string.Empty).Trim();
+            Department = department;
+            Campus = campus;
         }
 
         public string Name { get; }
+
+        public string Department { get; }
         
         public string Job { get; }
+
+        public string Campus { get; }
 
         public string Email { get; }
 
@@ -34,7 +41,7 @@ namespace SluEmailScraper
 
         public override string ToString()
         {
-            return string.Join(", ", Name, Job, Email);
+            return string.Join(", ", Name, Job, Email, Campus, Department);
         }
 
         public static bool operator ==(Person left, Person right)
