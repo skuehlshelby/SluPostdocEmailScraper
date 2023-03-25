@@ -24,7 +24,7 @@ namespace SluEmailScraper
         {
             CachedSearchResultsDirectory = Path.Combine(AppDirectory, "Cache");
             OutputDirectory = Path.Combine(AppDirectory, "Output");
-            SluSearchUrl = @"https://www.slu.se/en/settings/employee-search/?firstName=&lastName=&telephoneNumber=&email=&ou=DEPARTMENTNAME&location=";
+            SluSearchUrl = @"https://www.slu.se/en/settings/employee-search/?firstName=&lastName=&telephoneNumber=&email=&ou=DEPARTMENTNAME&location=LOCATION";
             SearchResultXPath = @"//div[@class='row result']";
             NameXPath = @".//span[@class='result-name']";
             EmailXPath = @".//a[starts-with(@href, 'mailto')]";
@@ -58,6 +58,7 @@ namespace SluEmailScraper
                     Name = "Ultuna", 
                     Departments = new string[]
                     {
+                        "Artdatabanken",
                         "Enheten för hippologutbildning",
                         "Institutionen för akvatiska resurser (SLU Aqua)",
                         "Institutionen för anatomi fysiologi och biokemi",
@@ -96,7 +97,7 @@ namespace SluEmailScraper
                 }
              };
 
-            TargetJobs = new string[] { "Postdoc", "Postdoctor" };
+            TargetJobs = new string[] { "Postdoktorand","Postdoktor","Postdoctor","Postdoc" };
         }
 
         public string CachedSearchResultsDirectory { get; set; }

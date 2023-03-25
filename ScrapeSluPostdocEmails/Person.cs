@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net;
 
 namespace SluEmailScraper
 {
+    [DebuggerDisplay($"{{{nameof(GetDebuggerDisplay)}(),nq}}")]
     public sealed class Person : IEquatable<Person>
     {
         public Person(string name, string job, string email, string campus, string department)
@@ -31,7 +33,7 @@ namespace SluEmailScraper
 
         public bool Equals(Person other)
         {
-            return other is not null && string.Equals(Email, other.Email, StringComparison.OrdinalIgnoreCase);
+            return other is not null && string.Equals(Email, other.Email);
         }
 
         public override int GetHashCode()
@@ -52,6 +54,11 @@ namespace SluEmailScraper
         public static bool operator !=(Person left, Person right)
         {
             return !(left==right);
+        }
+
+        private string GetDebuggerDisplay()
+        {
+            return $"{Name} {Job}";
         }
     }
 }

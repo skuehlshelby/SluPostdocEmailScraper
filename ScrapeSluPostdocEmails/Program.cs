@@ -47,12 +47,14 @@ namespace SluEmailScraper
                 {
                     Console.WriteLine($"Querying SLU for '{department}' employee data...");
 
-                    string query = settings.SluSearchUrl.Replace("DEPARTMENTNAME", Uri.EscapeDataString(department));
+                    string query = settings.SluSearchUrl.Replace("DEPARTMENTNAME", Uri.EscapeDataString(department)).Replace("LOCATION", campus.Name);
+                    Console.WriteLine($"Quesry string = '{query}'");
+
                     string webpage = LoadWebpage(query);
 
                     Console.WriteLine("Data received.");
 
-                    string filename = department + ".html";
+                    string filename = CreateHtmlCacheFileName(campus.Name, department);
                     SaveToCacheAsHtml(filename, webpage);
 
                     Console.WriteLine($"Data saved to '{Path.Combine(settings.CachedSearchResultsDirectory, filename)}'.");
@@ -95,6 +97,11 @@ namespace SluEmailScraper
             }
         }
 
+        private static string CreateHtmlCacheFileName(string campus, string department)
+        {
+            return $"{campus}_{department}.html";
+        }
+
         [Command("parse-from-cache", Description = CommandDescriptions.PARSE_FROM_CACHE, ExtendedHelpText = CommandDescriptions.PARSE_FROM_CACHE_EXTENDED)]
         public void ParseFromCache()
         {
@@ -102,13 +109,13 @@ namespace SluEmailScraper
 
             if (cache.Exists)
             {
-                ISet<Person> people = new HashSet<Person>();
+                ICollection<Person> people = new List<Person>();
 
                 foreach (var campus in settings.TargetCampuses)
                 {
                     foreach (var department in campus.Departments)
                     {
-                        FileInfo cachedHtml = new FileInfo(Path.Combine(cache.FullName, department + ".html"));
+                        FileInfo cachedHtml = new FileInfo(Path.Combine(cache.FullName, CreateHtmlCacheFileName(campus.Name, department)));
 
                         if (cachedHtml.Exists)
                         {
@@ -116,6 +123,7 @@ namespace SluEmailScraper
                             workingHtml.Load(cachedHtml.OpenRead());
 
                             HtmlNodeCollection searchResults = workingHtml.DocumentNode.SelectNodes(settings.SearchResultXPath);
+
 
                             foreach (var searchResult in searchResults)
                             {
