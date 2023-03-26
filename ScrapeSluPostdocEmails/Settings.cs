@@ -25,8 +25,8 @@ namespace SluEmailScraper
             CachedSearchResultsDirectory = Path.Combine(AppDirectory, "Cache");
             OutputDirectory = Path.Combine(AppDirectory, "Output");
             SluSearchUrl = @"https://www.slu.se/en/settings/employee-search/?firstName=&lastName=&telephoneNumber=&email=&ou=DEPARTMENTNAME&location=LOCATION";
-            SearchResultXPath = @"//div[@class='row result']";
-            NameXPath = @".//span[@class='result-name']";
+            SearchResultXPath = @"//*[starts-with(@class, 'row result')]";
+            NameXPath = @".//h3[@class='h4 mt-0']";
             EmailXPath = @".//a[starts-with(@href, 'mailto')]";
             JobKeyPhrase = "at the";
             JobXPath = $".//span[contains(text(), '{JobKeyPhrase}')]";

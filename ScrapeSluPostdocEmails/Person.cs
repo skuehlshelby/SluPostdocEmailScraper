@@ -53,12 +53,12 @@ namespace SluEmailScraper
 
         public static bool operator !=(Person left, Person right)
         {
-            return !(left==right);
+            return !(left == right);
         }
 
         private string GetDebuggerDisplay()
         {
-            return $"{Name} {Job}";
+            return $"{Name}, {Job}";
         }
     }
 }

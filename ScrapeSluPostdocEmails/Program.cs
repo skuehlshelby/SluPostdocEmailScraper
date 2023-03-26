@@ -48,7 +48,7 @@ namespace SluEmailScraper
                     Console.WriteLine($"Querying SLU for '{department}' employee data...");
 
                     string query = settings.SluSearchUrl.Replace("DEPARTMENTNAME", Uri.EscapeDataString(department)).Replace("LOCATION", campus.Name);
-                    Console.WriteLine($"Quesry string = '{query}'");
+                    Console.WriteLine($"Getting results from URL '{query}'");
 
                     string webpage = LoadWebpage(query);
 
@@ -60,7 +60,7 @@ namespace SluEmailScraper
                     Console.WriteLine($"Data saved to '{Path.Combine(settings.CachedSearchResultsDirectory, filename)}'.");
                     Console.WriteLine("Waiting briefly between queries...");
 
-                    Thread.Sleep(2000);
+                    Thread.Sleep(3000);
                 }
             }
             
@@ -71,13 +71,13 @@ namespace SluEmailScraper
 
         private string LoadWebpage(string url)
         {
-            using (HttpClient client = new HttpClient())
+            using (var client = new HttpClient())
             {
-                HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Get, url);
-                HttpResponseMessage response = client.Send(message);
+                var message = new HttpRequestMessage(HttpMethod.Get, url);
+                var response = client.Send(message);
                 response.EnsureSuccessStatusCode();
 
-                using (StreamReader reader = new StreamReader(response.Content.ReadAsStream()))
+                using (var reader = new StreamReader(response.Content.ReadAsStream()))
                 {
                     return reader.ReadToEnd();
                 }
@@ -91,13 +91,13 @@ namespace SluEmailScraper
                 Directory.CreateDirectory(settings.CachedSearchResultsDirectory);
             }
 
-            using (StreamWriter writer = File.CreateText(Path.Combine(settings.CachedSearchResultsDirectory, fileName)))
+            using (var writer = File.CreateText(Path.Combine(settings.CachedSearchResultsDirectory, fileName)))
             {
                 writer.Write(content);
             }
         }
 
-        private static string CreateHtmlCacheFileName(string campus, string department)
+        private string CreateHtmlCacheFileName(string campus, string department)
         {
             return $"{campus}_{department}.html";
         }
@@ -105,7 +105,7 @@ namespace SluEmailScraper
         [Command("parse-from-cache", Description = CommandDescriptions.PARSE_FROM_CACHE, ExtendedHelpText = CommandDescriptions.PARSE_FROM_CACHE_EXTENDED)]
         public void ParseFromCache()
         {
-            DirectoryInfo cache = new DirectoryInfo(settings.CachedSearchResultsDirectory);
+            var cache = new DirectoryInfo(settings.CachedSearchResultsDirectory);
 
             if (cache.Exists)
             {
@@ -115,29 +115,46 @@ namespace SluEmailScraper
                 {
                     foreach (var department in campus.Departments)
                     {
-                        FileInfo cachedHtml = new FileInfo(Path.Combine(cache.FullName, CreateHtmlCacheFileName(campus.Name, department)));
+                        var cachedHtml = new FileInfo(Path.Combine(cache.FullName, CreateHtmlCacheFileName(campus.Name, department)));
 
                         if (cachedHtml.Exists)
                         {
-                            HtmlDocument workingHtml = new HtmlDocument();
+                            var workingHtml = new HtmlDocument();
                             workingHtml.Load(cachedHtml.OpenRead());
 
-                            HtmlNodeCollection searchResults = workingHtml.DocumentNode.SelectNodes(settings.SearchResultXPath);
-
-
-                            foreach (var searchResult in searchResults)
+                            if (workingHtml.ParsedText.Contains("We couldn&#39;t find any contact information with your choice of search parameters."))
                             {
-                                Person person = ProcessSearchResult(searchResult, campus.Name, department);
+                                Console.WriteLine($"No search results found at {campus}: {department}");
+                            }
+                            else
+                            {
+                                var searchResults = workingHtml.DocumentNode.SelectNodes(settings.SearchResultXPath);
 
-                                if (settings.TargetJobs.Contains(person.Job))
+                                if (searchResults is null)
                                 {
-                                    people.Add(person);
+                                    Console.WriteLine($"At {campus}: {department}, XPath selector '{settings.SearchResultXPath}' failed to select any results.");
+                                }
+                                else
+                                {
+                                    foreach (var searchResult in searchResults)
+                                    {
+                                        Person person = ProcessSearchResult(searchResult, campus.Name, department);
+
+                                        if (settings.TargetJobs.Contains(person.Job))
+                                        {
+                                            people.Add(person);
+                                        }
+                                    }
                                 }
                             }
                         }
+                        else
+                        {
+                            Console.WriteLine($"Expected file {cachedHtml.FullName} does not exist. Please run 'update-cache'.");
+                        }
                     }
                 }
-                
+
                 SavePeopleToOutputDirectoryAsCsv("employee-email-data", people);
 
                 settings.Save();
@@ -154,17 +171,44 @@ namespace SluEmailScraper
             string name = result.SelectSingleNode(settings.NameXPath)?.InnerText;
             string email = result.SelectSingleNode(settings.EmailXPath)?.InnerText;
             string job = result.SelectSingleNode(settings.JobXPath)?.InnerText.Replace(settings.JobKeyPhrase, string.Empty).Trim();
-            
+
+            if (string.IsNullOrEmpty(name))
+            {
+                Console.WriteLine($"Failed to parse employee name with XPath '{settings.NameXPath}'.");
+            }
+
+            if (string.IsNullOrEmpty(email))
+            {
+                Console.WriteLine($"Failed to parse employee email for {name} with XPath '{settings.EmailXPath}'.");
+            }
+
+            if (string.IsNullOrEmpty(job))
+            {
+                Console.WriteLine($"Failed to parse employee job for {name} with XPath '{settings.JobXPath}'.");
+            }
+
             return new Person(name, job, email, campus, department);
         }
 
         private void SavePeopleToOutputDirectoryAsCsv(string fileName, ICollection<Person> people)
         {
+            var outputFolder = Directory.CreateDirectory(settings.OutputDirectory);
+
+            var fullPathToFile = Path.Combine(outputFolder.FullName, fileName + ".csv");
+
+            using (var fileStream = File.OpenWrite(fullPathToFile))
+            {
+                WritePeopleToStreamAsCsv(fileStream, people);
+            }
+            
+            Console.WriteLine($"{people.Count} results saved to {fullPathToFile}.");
+        }
+
+        private void WritePeopleToStreamAsCsv(Stream stream, ICollection<Person> people)
+        {
             if (people.Any())
             {
-                DirectoryInfo output = Directory.CreateDirectory(settings.OutputDirectory);
-
-                using (StreamWriter writer = new StreamWriter(File.OpenWrite(Path.Combine(output.FullName, fileName + ".csv"))))
+                using (var writer = new StreamWriter(stream))
                 {
                     writer.WriteLine(string.Join(", ", nameof(Person.Name), nameof(Person.Job), nameof(Person.Email), nameof(Person.Campus), nameof(Person.Department)));
 
@@ -173,8 +217,6 @@ namespace SluEmailScraper
                         writer.WriteLine(person);
                     }
                 }
-
-                Console.WriteLine($"Saved {people.Count} results to {fileName}.");
             }
         }
     }
